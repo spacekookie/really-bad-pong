@@ -1,6 +1,9 @@
 extends Node2D
 
 var screen_size
+var up_bound
+var down_bound
+
 var pad_size
 var direction = Vector2(0.0, 0.0)
 
@@ -16,7 +19,13 @@ var right_speed = 0
 ## This includes: paddle bounds, paddle sizes, screen size, initial ball direction, etc
 func _ready():
 	screen_size = get_viewport_rect().size
+	up_bound = -(screen_size.y / 2)
+	down_bound = screen_size.y / 2
 	pad_size = get_node("left").get_texture().get_size()
+	
+	print(screen_size)
+	print("up", up_bound)
+	print("down", down_bound)
 	
 	# Pick a random ball direction
 	randomize()
@@ -31,7 +40,10 @@ func _process(delta):
 
 
 func update_paddle_position(delta):
-	pass
+	handle_input(get_node("left"), "left_move_up", -1, delta)
+	handle_input(get_node("left"), "left_move_down", 1, delta)
+	handle_input(get_node("right"), "right_move_up", -1, delta)
+	handle_input(get_node("right"), "right_move_down", 1, delta)
 
 
 func update_ball_position(delta):
@@ -40,11 +52,16 @@ func update_ball_position(delta):
 	get_node("ball").set_pos(pos)
 
 
-func handle_input(pad, handle, direction, delta):
-	var pos = get_node(pad).get_pos()
+func handle_input(node, handle, direction, delta):
+	var pos = node.get_pos()
 	var state = Input.is_action_pressed(handle)
-	if(state): return pos + direction * delta * PAD_SPEED
-	return pos
+	
+	var change = direction * delta * PAD_SPEED
+	if(state):
+		print(pos.y)
+		if(int(pos.y) + change > up_bound + (pad_size.y / 2) and int(pos.y) + change < down_bound - (pad_size.y / 2)):
+			pos.y += change
+	node.set_pos(pos)
 
 
 func handle_collisions(delta):
