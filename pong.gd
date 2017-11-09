@@ -7,9 +7,9 @@ var down_bound
 var pad_size
 var direction = Vector2(0.0, 0.0)
 
-const PAD_SPEED = 250
-const UPPER_PAD_SPEED = 32
-const INITIAL_BALL_SPEED = 110
+const PAD_SPEED = 200
+const UPPER_PAD_SPEED = 128
+const INITIAL_BALL_SPEED = 120
 var ball_speed = INITIAL_BALL_SPEED
 
 ## Setup the game world in a way where we can just assume some stuff
@@ -26,24 +26,32 @@ func _ready():
 	
 	# Pick a random ball direction
 	randomize()
-	if((randi() % 11) % 2 == 0): direction = Vector2(INITIAL_BALL_SPEED, 0.0);
-	else: 						 direction = Vector2(-INITIAL_BALL_SPEED, 0.0);
+#	if((randi() % 11) % 2 == 0): direction = Vector2(INITIAL_BALL_SPEED, 0.0);
+	#else: 						 
+	direction = Vector2(-INITIAL_BALL_SPEED, 0.0);
 	set_process(true)
 
 
 func _process(delta):
 	update_paddle_positions(delta)
 	update_ball_position(delta)
-	
 	handle_collisions(delta)
 
 
 # Handle all possible position changes for paddles
 func update_paddle_positions(delta):
-	handle_input(get_node("left"), "left_move_up", -1, delta)
-	handle_input(get_node("left"), "left_move_down", 1, delta)
-	handle_input(get_node("right"), "right_move_up", -1, delta)
-	handle_input(get_node("right"), "right_move_down", 1, delta)
+	var ml1  = handle_input(get_node("left"), "left_move_up", -1, delta)
+	var ml2 = handle_input(get_node("left"), "left_move_down", 1, delta)
+	
+	if(not ml1 and not ml2):
+		var speed = get_node("left").get_meta("speed")
+		if(speed > 0): speed -= 1
+		elif(speed < 0): speed += 1
+		get_node("left").set_meta("speed", speed)
+	print(get_node("left").get_meta("speed"))
+	
+#	handle_input(get_node("right"), "right_move_up", -1, delta)
+#	handle_input(get_node("right"), "right_move_down", 1, delta)
 
 
 # A simple ball update function
@@ -57,12 +65,15 @@ func update_ball_position(delta):
 func handle_input(node, handle, direction, delta):
 	var pos = node.get_pos()
 	var state = Input.is_action_pressed(handle)
+	var moved = false
 	
 	var change = direction * delta * PAD_SPEED
 	if(state):
+		
 		# TODO: This maths is shit
 		if(int(pos.y) + change > up_bound + (pad_size.y / 2) and int(pos.y) + change < down_bound - (pad_size.y / 2)):
 			pos.y += change
+			moved = true
 			
 			var speed = node.get_meta("speed")
 			if(speed == 0):
@@ -77,13 +88,36 @@ func handle_input(node, handle, direction, delta):
 					elif (speed < -UPPER_PAD_SPEED):
 						speed = -UPPER_PAD_SPEED
 				node.set_meta("speed", speed)
-			print(node.get_meta("speed"))
 	node.set_pos(pos)
+	return moved
 
 
 # A function that handles collitions on paddles
 func handle_collisions(delta):
+	
+	left_collision(get_node("left"), get_node("ball"))
+	right_collision(get_node("right"), get_node("ball"))
+
+
+func right_collision(pad, ball):
 	pass
+
+
+func left_collision(pad, ball):
+	
+	var pp = pad.get_pos() + Vector2(40, 200)
+	var bp = ball.get_pos() + Vector2(320, 200)
+	
+	var pmx = pad_size.x / 2
+	var pmy = pad_size.y / 2
+	
+	if(pp.y - pmy < bp.y and pp.y + pmy > bp.y and pp.x + pmx > bp.x and pp.x - pmx < bp.x):
+		var x = ball_speed * cos(direction.angle())
+		var y = ball_speed * -sin(direction.angle()) + pad.get_meta("speed")
+		direction = Vector2(x, y)
+	
+#	if(pp.y >= bp.y):
+#		print("PONG!")
 
 
 func handle_gameover():
