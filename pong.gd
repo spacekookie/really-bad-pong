@@ -58,6 +58,7 @@ func update_paddle_positions(delta):
 func update_ball_position(delta):
 	var pos = get_node("ball").get_pos()
 	pos += direction * delta
+	
 	get_node("ball").set_pos(pos)
 
 
@@ -82,7 +83,7 @@ func handle_input(node, handle, direction, delta):
 				if(direction < 0 and speed > 0 or direction > 0 and speed < 0):
 					speed = 0
 				else:
-					speed += direction 
+					speed += direction * 4
 					if(speed > UPPER_PAD_SPEED):
 						speed = UPPER_PAD_SPEED
 					elif (speed < -UPPER_PAD_SPEED):
@@ -118,6 +119,10 @@ func left_collision(pad, ball):
 	
 #	if(pp.y >= bp.y):
 #		print("PONG!")
+
+
+func bounce(axis, node):
+	pass
 
 
 func handle_gameover():
